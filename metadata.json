@@ -1,0 +1,8 @@
+{
+  "name": "Remix:  PS1_Receive_Pumping xx",
+  "description": "نظام إدارة اللوجستيات النفطية لعمليات الاستلام والضخ في مستودع PS1.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

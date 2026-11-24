@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">محطة الضخ PS1</string>
+    <string name="title_activity_main">محطة الضخ PS1</string>
+    <string name="package_name">com.ps1.dashboard</string>
+    <string name="custom_url_scheme">com.ps1.dashboard</string>
+</resources>
