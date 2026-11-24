@@ -44,15 +44,7 @@ export function SmartDataEntry({ hours, onDataExtracted }: SmartDataEntryProps) 
       let base64 = "";
       if (file.type === "application/pdf") {
         const result = await extractDataViaOCR(file);
-        
-        // Round local OCR levels to nearest 10
-        const cleanedLevels = { ...result.levels };
-        Object.keys(cleanedLevels).forEach(k => {
-          const val = cleanedLevels[k];
-          if (typeof val === "number" && val !== null) {
-            cleanedLevels[k] = Math.round(val / 10) * 10;
-          }
-        });
+        // Preserve the exact extracted measurement; the user reviews it before applying.
 
         setExtractedData((prev: any) => {
           if (!prev) {
@@ -86,15 +78,7 @@ export function SmartDataEntry({ hours, onDataExtracted }: SmartDataEntryProps) 
 
         try {
           const result = await analyzeControlScreen({ data: { base64Image: base64, mimeType: file.type } });
-          
-          // Round levels to nearest 10
-          const cleanedLevels = { ...result.levels };
-          Object.keys(cleanedLevels).forEach(k => {
-            const val = cleanedLevels[k];
-            if (typeof val === "number" && val !== null) {
-              cleanedLevels[k] = Math.round(val / 10) * 10;
-            }
-          });
+        // Preserve the exact extracted measurement; the user reviews it before applying.
 
           setExtractedData((prev: any) => {
             if (!prev) {
@@ -121,15 +105,7 @@ export function SmartDataEntry({ hours, onDataExtracted }: SmartDataEntryProps) 
         } catch (geminiError) {
           console.warn("Gemini failed, falling back to local OCR:", geminiError);
           const result = await extractDataViaOCR(file);
-          
-          // Round levels to nearest 10
-          const cleanedLevels = { ...result.levels };
-          Object.keys(cleanedLevels).forEach(k => {
-            const val = cleanedLevels[k];
-            if (typeof val === "number" && val !== null) {
-              cleanedLevels[k] = Math.round(val / 10) * 10;
-            }
-          });
+        // Preserve the exact extracted measurement; the user reviews it before applying.
 
           setExtractedData((prev: any) => {
             if (!prev) {

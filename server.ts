@@ -1,6 +1,5 @@
 import express from "express";
 import path from "path";
-import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 
@@ -178,16 +177,6 @@ Return the final structured JSON with the level values in centimeters (cm) match
       }
       
       const parsed = JSON.parse(textOutput.trim());
-      if (parsed && typeof parsed === "object" && parsed.levels) {
-        Object.keys(parsed.levels).forEach((tank) => {
-          const val = parsed.levels[tank];
-          if (typeof val === "number" && val !== null) {
-            // Programmatically round to the nearest 10 cm (unit digit becomes 0)
-            parsed.levels[tank] = Math.round(val / 10) * 10;
-          }
-        });
-      }
-      
       res.json(parsed);
     } catch (error: any) {
       console.error("Gemini Vision Error:", error);
@@ -196,19 +185,14 @@ Return the final structured JSON with the level values in centimeters (cm) match
   });
 
   app.post("/api/ai/chat", async (req, res) => {
-    const logFilePath = path.join(process.cwd(), "debug_chat.log");
-    const timestamp = new Date().toISOString();
     try {
-      fs.appendFileSync(logFilePath, `[${timestamp}] Incoming chat request: ${JSON.stringify(req.body)}\n`);
       const { message, history = [], context = {} } = req.body;
       if (!message) {
-        fs.appendFileSync(logFilePath, `[${timestamp}] Error: Missing message parameter\n`);
         return res.status(400).json({ error: "Missing message parameter" });
       }
 
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
-        fs.appendFileSync(logFilePath, `[${timestamp}] Error: GEMINI_API_KEY is not set\n`);
         return res.status(500).json({ error: "GEMINI_API_KEY is not set" });
       }
 
@@ -238,7 +222,14 @@ ${JSON.stringify(context.tasks || [], null, 2)}
 
       const systemInstruction = `
 أنت المساعد الذكي والمشغل الافتراضي لمحطة الضخ الأولى PS1 (Pumping Station 1).
-وظيفتك الأساسية هي مساعدة مشغل المحطة والمهندسين في فهم قراءات الخزانات ومعدلات الاستلام والضخ والتحقق من سلامة الأنابيب وتوجيههم بخصوص إجراءات السلامة والـ SOPs.
+وظيفتك الأساسية مساعد هندسي استشاري فقط لمهندس المحطة. أنت لست مشغلاً افتراضياً ولا تملك صلاحية إصدار أوامر تشغيلية.
+
+قيود سلامة إلزامية:
+- لا تصدر أوامر فتح أو غلق صمامات، أو تشغيل/إيقاف مضخات أو توربينات، ولا تغيّر نقاط ضبط أو إعدادات حماية.
+- لا تطلب تجاوز أو تعطيل إنذار أو interlock أو trip أو وسيلة حماية.
+- لا تستبدل إجراءات التشغيل المعتمدة أو تصريح العمل أو العزل والقفل والتأشير (LOTO) أو تأكيد السيطرة المركزية والموقع.
+- عند نقص البيانات أو وجود تعارض، صرّح بذلك واطلب الرجوع إلى المهندس المناوب والإجراء المعتمد.
+- أي تحليل أو تنبيه صادر منك استشاري وليس إنذاراً رسمياً أو تصريحاً بالتنفيذ.
 
 إرشادات هامة لإجاباتك:
 1. استخدم نبرة مهنية ومساعدة ومباشرة، وتحدث باللغة العربية بشكل افتراضي وواضح (أو باللغة الإنجليزية إذا سألك المهندس بها).
@@ -263,8 +254,6 @@ ${contextString}
         }
       ];
 
-      fs.appendFileSync(logFilePath, `[${timestamp}] Dynamic system instruction and contents formatted. Calling @google/genai...\n`);
-
       const response = await generateContentWithRetry(ai, {
         model: "gemini-3.5-flash",
         fallbackModels: ["gemini-flash-latest", "gemini-3.1-flash-lite"],
@@ -279,12 +268,9 @@ ${contextString}
       if (!textOutput) {
         throw new Error("Empty response returned from Gemini API");
       }
-
-      fs.appendFileSync(logFilePath, `[${timestamp}] Success. Response: ${textOutput.substring(0, 100)}...\n`);
       res.json({ text: textOutput });
     } catch (error: any) {
       console.error("Gemini Chat Error:", error);
-      fs.appendFileSync(logFilePath, `[${timestamp}] Gemini Chat Error: ${error.message}\nStack: ${error.stack}\n`);
       res.status(500).json({ error: error.message || "Failed to process chat" });
     }
   });
